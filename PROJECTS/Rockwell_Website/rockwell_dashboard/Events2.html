@@ -1,0 +1,524 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Rockwell Automation | Events Dashboard</title>
+<style>
+  :root {
+    --brand-red: #cc0000;
+    --brand-red-dark: #a30000;
+    --carbon: #111111;
+    --carbon-soft: #2b2b2b;
+    --grey-50: #f7f7f8;
+    --grey-100: #eeeef0;
+    --grey-300: #d6d8db;
+    --grey-500: #8a8f98;
+    --grey-700: #4a4f57;
+    --radius: 10px;
+    --shadow-sm: 0 1px 3px rgba(17,17,17,0.08);
+    --shadow-md: 0 12px 24px -8px rgba(17,17,17,0.18);
+    font-family: system-ui, -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  }
+
+  * { box-sizing: border-box; }
+
+  body {
+    margin: 0;
+    background: var(--grey-50);
+    color: var(--carbon);
+    -webkit-font-smoothing: antialiased;
+  }
+
+  /* ---------- Hero ---------- */
+  .hero {
+    background: linear-gradient(135deg, var(--carbon) 0%, var(--carbon-soft) 100%);
+    color: #fff;
+    padding: 48px 32px 96px;
+    border-bottom: 4px solid var(--brand-red);
+  }
+  .hero-inner { max-width: 1180px; margin: 0 auto; }
+  .hero-eyebrow {
+    text-transform: uppercase;
+    letter-spacing: 0.12em;
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--brand-red);
+    margin: 0 0 8px;
+  }
+  .hero h1 {
+    font-size: clamp(24px, 3.4vw, 34px);
+    font-weight: 700;
+    margin: 0 0 24px;
+    letter-spacing: -0.01em;
+  }
+  .controls { display: flex; gap: 12px; flex-wrap: wrap; align-items: center; }
+
+  .btn-sync {
+    background: var(--brand-red);
+    color: #fff;
+    border: none;
+    font-weight: 600;
+    font-size: 14px;
+    letter-spacing: 0.02em;
+    padding: 12px 22px;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: background 0.18s ease, transform 0.12s ease;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .btn-sync:hover { background: var(--brand-red-dark); }
+  .btn-sync:active { transform: scale(0.98); }
+  .btn-sync:disabled { opacity: 0.7; cursor: progress; }
+
+  .spinner {
+    width: 14px; height: 14px;
+    border: 2px solid rgba(255,255,255,0.4);
+    border-top-color: #fff;
+    border-radius: 50%;
+    animation: spin 0.7s linear infinite;
+    display: none;
+  }
+  .btn-sync.is-loading .spinner { display: inline-block; }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  .search-input {
+    flex: 1;
+    min-width: 220px;
+    max-width: 320px;
+    padding: 12px 16px;
+    border-radius: 6px;
+    border: 1px solid rgba(255,255,255,0.18);
+    background: rgba(255,255,255,0.08);
+    color: #fff;
+    font-size: 14px;
+    transition: border-color 0.15s ease, background 0.15s ease;
+  }
+  .search-input::placeholder { color: rgba(255,255,255,0.5); }
+  .search-input:focus {
+    outline: none;
+    border-color: var(--brand-red);
+    background: rgba(255,255,255,0.14);
+  }
+  .search-input:disabled { cursor: not-allowed; }
+
+  .status-line {
+    margin: 14px 0 0;
+    font-size: 12.5px;
+    color: rgba(255,255,255,0.55);
+  }
+
+  /* ---------- Main container ---------- */
+  .container {
+    max-width: 1180px;
+    margin: -56px auto 64px;
+    padding: 0 32px;
+  }
+
+  .alert-banner {
+    background: #fff;
+    border-left: 4px solid var(--brand-red);
+    border-radius: 6px;
+    padding: 12px 16px;
+    font-size: 13.5px;
+    color: var(--grey-700);
+    box-shadow: var(--shadow-sm);
+    margin-bottom: 20px;
+  }
+
+  .section-label {
+    font-size: 12px;
+    font-weight: 700;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--grey-500);
+    margin: 0 0 16px;
+    padding-top: 8px;
+  }
+
+  /* ---------- Grid ---------- */
+  .grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    gap: 20px;
+    margin-bottom: 40px;
+  }
+
+  .card {
+    background: #fff;
+    border-radius: var(--radius);
+    box-shadow: var(--shadow-sm);
+    padding: 22px;
+    display: flex;
+    flex-direction: column;
+    min-height: 168px;
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+    border: 1px solid var(--grey-100);
+  }
+  .card:hover {
+    transform: scale(1.02);
+    box-shadow: var(--shadow-md);
+  }
+
+  .badge {
+    align-self: flex-start;
+    background: rgba(204,0,0,0.08);
+    color: var(--brand-red);
+    font-size: 11.5px;
+    font-weight: 700;
+    letter-spacing: 0.03em;
+    text-transform: uppercase;
+    padding: 5px 10px;
+    border-radius: 100px;
+    margin-bottom: 14px;
+  }
+  .card h3 {
+    font-size: 16.5px;
+    font-weight: 700;
+    line-height: 1.35;
+    margin: 0 0 auto;
+    color: var(--carbon);
+  }
+  .card .meta {
+    margin-top: 16px;
+    font-size: 13px;
+    color: var(--grey-500);
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+  .card .meta::before {
+    content: "";
+    width: 5px; height: 5px;
+    border-radius: 50%;
+    background: var(--grey-500);
+    flex-shrink: 0;
+  }
+
+  .card.suggested { border-style: dashed; border-color: var(--grey-300); }
+  .card.suggested .badge { background: rgba(17,17,17,0.06); color: var(--grey-700); }
+
+  /* ---------- Skeletons ---------- */
+  .skeleton-card {
+    background: #fff;
+    border-radius: var(--radius);
+    padding: 22px;
+    min-height: 168px;
+    border: 1px solid var(--grey-100);
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+  }
+  .sk-block {
+    border-radius: 6px;
+    background: linear-gradient(90deg, var(--grey-100) 25%, var(--grey-300) 37%, var(--grey-100) 63%);
+    background-size: 400% 100%;
+    animation: shimmer 1.4s ease infinite;
+  }
+  .sk-badge { width: 84px; height: 20px; border-radius: 100px; }
+  .sk-title { width: 90%; height: 16px; }
+  .sk-title.short { width: 60%; }
+  .sk-meta { width: 40%; height: 12px; margin-top: auto; }
+  @keyframes shimmer {
+    0% { background-position: 100% 0; }
+    100% { background-position: -100% 0; }
+  }
+
+  /* ---------- Empty state ---------- */
+  .empty-state {
+    grid-column: 1 / -1;
+    text-align: center;
+    padding: 56px 24px;
+    background: #fff;
+    border-radius: var(--radius);
+    border: 1px dashed var(--grey-300);
+  }
+  .empty-state h4 { margin: 0 0 6px; font-size: 16px; color: var(--carbon); }
+  .empty-state p { margin: 0; font-size: 13.5px; color: var(--grey-500); }
+
+  @media (prefers-reduced-motion: reduce) {
+    .card, .btn-sync, .spinner, .sk-block { animation: none !important; transition: none !important; }
+  }
+</style>
+</head>
+<body>
+
+  <header class="hero">
+    <div class="hero-inner">
+      <p class="hero-eyebrow">Rockwell Automation</p>
+      <h1>Global Events Radar</h1>
+      <div class="controls">
+        <button id="syncBtn" class="btn-sync" type="button">
+          <span class="spinner" aria-hidden="true"></span>
+          <span class="btn-label">Sync Live Events</span>
+        </button>
+        <input
+          id="searchInput"
+          class="search-input"
+          type="text"
+          placeholder="Search events or locations…"
+          disabled
+          aria-label="Search events"
+        >
+      </div>
+      <p class="status-line" id="statusLine">Last updated: never</p>
+    </div>
+  </header>
+
+  <main class="container">
+    <div id="alertSlot"></div>
+    <div id="eventsGrid" class="grid" aria-live="polite"></div>
+    <div id="suggestedSlot"></div>
+  </main>
+
+<script>
+/**
+ * EventsDashboard
+ * ----------------
+ * Encapsulated in a class rather than free functions so all state
+ * (events, DOM refs, debounce timer) lives on `this` instead of the
+ * global scope. This avoids the name collisions and hidden coupling
+ * that come from scattering `let allEvents = []` etc. at module level,
+ * and makes the whole thing easy to re-instantiate or test in isolation.
+ */
+class EventsDashboard {
+  static CACHE_KEY = "rockwell_events_cache_v1";
+ // Prefix your target URL with a CORS proxy
+static API_URL = "https://www.rockwellautomation.com/en-us/events/jcr:content/root/main-par/generic_container/GenericContainerParsys/column_control/Col1/generic_filter.genericSearch.json?rootPath=%2Fcontent%2Frockwell-automation%2Fglobal%2Fna%2Fen&deepCount=false&upcomingEventsFlag=true&contentType=event-in-person&contentType=event-virtual&sort=eventAsc&numPerPage=24&page=1";
+
+  // Local fallback used when the live API is unreachable (CORS / offline / non-200).
+  static FALLBACK_EVENTS = [
+    { title: "Automation Fair 2026", location: "Chicago, IL", startDate: "Nov 16, 2026" },
+    { title: "RAOTM India", location: "Noida, India", startDate: "Sep 08, 2026" },
+  ];
+
+  // Filler content shown alongside a sparse result set so the dashboard
+  // never looks broken or empty — purely presentational, never mixed
+  // into `this.events` or included in search matching.
+  static SUGGESTED_TRAINING = [
+    { title: "FactoryTalk Optix Fundamentals", location: "On-Demand", startDate: "Self-paced" },
+    { title: "Studio 5000 Logix Designer Essentials", location: "Virtual", startDate: "Rolling enrollment" },
+    { title: "Industrial Cybersecurity Foundations", location: "Virtual", startDate: "Rolling enrollment" },
+  ];
+
+  constructor(root) {
+    this.events = [];
+    this.syncBtn = root.querySelector("#syncBtn");
+    this.searchInput = root.querySelector("#searchInput");
+    this.grid = root.querySelector("#eventsGrid");
+    this.alertSlot = root.querySelector("#alertSlot");
+    this.suggestedSlot = root.querySelector("#suggestedSlot");
+    this.statusLine = root.querySelector("#statusLine");
+
+    this.debouncedFilter = this.debounce(this.applyFilter.bind(this), 300);
+
+    this.syncBtn.addEventListener("click", () => this.sync());
+    this.searchInput.addEventListener("input", (e) => this.debouncedFilter(e.target.value));
+
+    this.hydrateFromCache();
+  }
+
+  /**
+   * Generic debounce helper. The search box fires on every keystroke,
+   * but filtering (and any future network calls) is wasted work until
+   * the person pauses typing. Wrapping the handler here means the fast
+   * path (rendering) only runs once per 300ms of silence, not once per
+   * keystroke — cheap for a client-side array filter today, and it keeps
+   * this component ready to scale to a remote/paginated search later
+   * without touching the event listener wiring.
+   */
+  debounce(fn, delay) {
+    let timer = null;
+    return (...args) => {
+      clearTimeout(timer);
+      timer = setTimeout(() => fn(...args), delay);
+    };
+  }
+
+  // ---------- Cache ----------
+
+  hydrateFromCache() {
+    try {
+      const raw = localStorage.getItem(EventsDashboard.CACHE_KEY);
+      if (!raw) return;
+      const { events, savedAt } = JSON.parse(raw);
+      if (!Array.isArray(events) || events.length === 0) return;
+      this.events = events;
+      this.searchInput.disabled = false;
+      this.render(this.events);
+      this.setStatus(`Last updated: ${new Date(savedAt).toLocaleString()} (cached)`);
+    } catch {
+      // Corrupt or unavailable localStorage should never block first paint.
+      localStorage.removeItem(EventsDashboard.CACHE_KEY);
+    }
+  }
+
+  saveToCache(events) {
+    try {
+      localStorage.setItem(
+        EventsDashboard.CACHE_KEY,
+        JSON.stringify({ events, savedAt: Date.now() })
+      );
+    } catch {
+      // Quota exceeded or storage disabled — non-fatal, dashboard still works in-memory.
+    }
+  }
+
+  // ---------- Sync ----------
+
+  async sync() {
+    this.setLoading(true);
+    this.showSkeletons(3);
+    this.alertSlot.innerHTML = "";
+
+    try {
+      const response = await fetch(EventsDashboard.API_URL);
+      if (!response.ok) throw new Error(`API responded with ${response.status}`);
+      const data = await response.json();
+      const items = Array.isArray(data.items) ? data.items : [];
+      if (items.length === 0) throw new Error("Empty payload");
+      this.events = this.normalize(items);
+    } catch (err) {
+      // Covers network failure, CORS rejection, non-200, and malformed payloads
+      // in one place, so the UI always has something reasonable to show.
+      this.events = EventsDashboard.FALLBACK_EVENTS;
+      this.showAlert("Live API unreachable — showing cached fallback data.");
+    } finally {
+      // `finally` guarantees the button/input re-enable and the timestamp
+      // update regardless of which branch above ran, so the UI can never
+      // get stuck in a permanent "Syncing…" state.
+      this.saveToCache(this.events);
+      this.searchInput.disabled = false;
+      this.searchInput.value = "";
+      this.render(this.events);
+      this.setStatus(`Last updated: ${new Date().toLocaleString()}`);
+      this.setLoading(false);
+    }
+  }
+
+  normalize(items) {
+    return items.map((ev) => ({
+      title: ev.title || "Untitled Event",
+      location: ev.location || "TBD",
+      startDate: ev.startDate || "Date TBD",
+    }));
+  }
+
+  applyFilter(term) {
+    const q = term.trim().toLowerCase();
+    if (!q) return this.render(this.events);
+    const filtered = this.events.filter(
+      (ev) =>
+        ev.title.toLowerCase().includes(q) || ev.location.toLowerCase().includes(q)
+    );
+    this.render(filtered);
+  }
+
+  // ---------- Rendering ----------
+
+  setLoading(isLoading) {
+    this.syncBtn.disabled = isLoading;
+    this.syncBtn.classList.toggle("is-loading", isLoading);
+    this.syncBtn.querySelector(".btn-label").textContent = isLoading
+      ? "Syncing…"
+      : "Sync Live Events";
+  }
+
+  setStatus(text) {
+    this.statusLine.textContent = text;
+  }
+
+  showAlert(message) {
+    this.alertSlot.innerHTML = `<div class="alert-banner">${this.escape(message)}</div>`;
+  }
+
+  showSkeletons(count) {
+    // Skeleton markup mirrors the real card's box model (padding, badge
+    // width, title lines, meta row) exactly, so when real content swaps
+    // in there's no layout shift — the card's bounding box never changes.
+    this.suggestedSlot.innerHTML = "";
+    this.grid.innerHTML = Array.from({ length: count })
+      .map(
+        () => `
+        <div class="skeleton-card" aria-hidden="true">
+          <div class="sk-block sk-badge"></div>
+          <div class="sk-block sk-title"></div>
+          <div class="sk-block sk-title short"></div>
+          <div class="sk-block sk-meta"></div>
+        </div>`
+      )
+      .join("");
+  }
+
+  render(data) {
+    this.suggestedSlot.innerHTML = "";
+
+    if (data.length === 0) {
+      this.grid.innerHTML = `
+        <div class="empty-state">
+          <h4>No events found</h4>
+          <p>Try a different keyword, or clear the search to see all synced events.</p>
+        </div>`;
+      return;
+    }
+
+    // DocumentFragment batches all card insertions into a single reflow
+    // instead of one reflow per appendChild call — cheap here at a few
+    // dozen cards, but it's the right default so this scales without
+    // rewriting the render path later.
+    const fragment = document.createDocumentFragment();
+    data.forEach((event) => fragment.appendChild(this.buildCard(event)));
+
+    this.grid.innerHTML = "";
+    this.grid.appendChild(fragment);
+
+    // A sparse result set (1–2 cards) reads as broken in an auto-fit grid
+    // built for a dozen items. Rather than fake more real events, we
+    // surface genuinely useful adjacent content — training courses —
+    // clearly labeled as suggestions, so the page stays full and honest.
+    if (data.length <= 2) {
+      this.renderSuggested();
+    }
+  }
+
+  buildCard(event, { suggested = false } = {}) {
+    const card = document.createElement("div");
+    card.className = suggested ? "card suggested" : "card";
+    card.innerHTML = `
+      <span class="badge">${this.escape(event.location)}</span>
+      <h3>${this.escape(event.title)}</h3>
+      <div class="meta">${this.escape(event.startDate)}</div>
+    `;
+    return card;
+  }
+
+  renderSuggested() {
+    const label = document.createElement("p");
+    label.className = "section-label";
+    label.textContent = "Recommended Training";
+
+    const grid = document.createElement("div");
+    grid.className = "grid";
+    const fragment = document.createDocumentFragment();
+    EventsDashboard.SUGGESTED_TRAINING.forEach((item) =>
+      fragment.appendChild(this.buildCard(item, { suggested: true }))
+    );
+    grid.appendChild(fragment);
+
+    this.suggestedSlot.appendChild(label);
+    this.suggestedSlot.appendChild(grid);
+  }
+
+  escape(str) {
+    const div = document.createElement("div");
+    div.textContent = String(str);
+    return div.innerHTML;
+  }
+}
+
+new EventsDashboard(document);
+</script>
+</body>
+</html>
