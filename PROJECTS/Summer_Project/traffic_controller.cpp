@@ -174,8 +174,8 @@ public:
 
     // Webster's Baseline Formula
     double computeWebsterCycleLength(double flowRate) {
-        double L = 10.0; // Lost time is approx 10 seconds
-        double saturationFlow = 1950.0; // Vehicles per hour
+        double L = 8.0; // Updated to match Report.pdf methodology (8 seconds)
+        double saturationFlow = 1800.0; // Updated to match Report.pdf methodology (1800 veh/hr)
         double Y = flowRate / saturationFlow; // Critical flow ratio
         
         if (Y >= 1.0) return 120.0; // Cap cycle length if over-saturated
